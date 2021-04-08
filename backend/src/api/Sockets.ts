@@ -2,7 +2,7 @@ import express from 'express';
 import { createServer, Server as httpServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import DataManager from '../data/DataManager';
-import jsonpack from 'jsonpack';
+import MarketEnum from '../data/MarketEnum';
 
 interface Query {
 	timeframes: string; // Examples: "daily, monthly, weekly"; "daily"; "hourly, weekly"
@@ -27,7 +27,7 @@ export default class Sockets {
 
 	start(): httpServer {
 		this.server = createServer(this.app);
-		this.io = new Server(this.server);
+		this.io = new Server(this.server, { cors: { origin: ['https://pivotscreener.com', 'https://pivotscreener.netlify.app', 'http://localhost:3000'], methods: ['GET', 'POST'] } });
 
 		this.handleConnections();
 		this.handleIODataManagerEvents();
@@ -37,7 +37,6 @@ export default class Sockets {
 
 	handleConnections(): void {
 		this.io.on('connection', (socket: ExtSocket) => {
-			console.log(`connection received ${socket.id} ${JSON.stringify(socket.handshake.query)}`);
 			this.handleSocketRequestTickers(socket);
 		});
 	}
@@ -61,13 +60,17 @@ export default class Sockets {
 
 	// Emit on data_updated event
 	handleIODataManagerEvents(): void {
-		this.dataManager.eventEmitter.on('data_updated', () => {
+		this.dataManager.eventEmitter.on('data_updated', (market: MarketEnum) => {
 			const { sockets } = this.io.of('/');
 
-			console.log(`[data_updated] Sending to ${sockets.size} sockets`);
-
 			for (const [key, socket] of sockets.entries()) {
-				this.emitFilteredTickersTo(socket);
+				if (socket.tickersQuery) {
+					if (socket.tickersQuery.markets) {
+						if (socket.tickersQuery.markets.toLowerCase().includes(market.toLowerCase())) {
+							this.emitFilteredTickersTo(socket);
+						}
+					} else this.emitFilteredTickersTo(socket);
+				}
 			}
 		});
 	}
@@ -77,7 +80,7 @@ export default class Sockets {
 			const query = socket.tickersQuery;
 			if (query) {
 				const res = this.dataManager.getFilteredTickers(query.timeframes, query.markets, query.symbols);
-				socket.emit('tickers_data', jsonpack.pack(res));
+				socket.emit('tickers_data', res);
 			}
 		}
 	}

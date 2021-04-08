@@ -1,5 +1,8 @@
 import events from 'events';
 import ITicker from './ITicker';
+import ICandlesticks from './ICandlesticks';
+import MarketEnum from './MarketEnum';
+import ExchangeEnum from './ExchangeEnum';
 
 export default class DataManager {
 	eventEmitter: events; // Used to subscribe other modules to data events (i.e. data updated event)
@@ -18,14 +21,16 @@ export default class DataManager {
 		if (!this._tickersList.find((q) => q.symbol === ticker.symbol && q.market === ticker.market && q.exchange === ticker.exchange)) this._tickersList.push(ticker);
 	}
 
-	emitUpdateEvent(): void {
-		// TODO: Refactor
-		console.log('emitUpdateEvent signal, tickers length = ' + this._tickersList.length);
-		this.eventEmitter.emit('data_updated');
+	updateCandlesticks(ticker: ITicker, timeframe: string, candlesticks: ICandlesticks[]): void {
+		ticker.candlesticks[timeframe + 'Candles'] = candlesticks;
 	}
 
-	getTickersListByMarketExchange(market: string, exchange: string): ITicker[] {
-		return this._tickersList.filter((q) => q.market === market && q.exchange === exchange);
+	emitUpdateEvent(market: MarketEnum): void {
+		this.eventEmitter.emit('data_updated', market); // TODO: Add exchange parameter
+	}
+
+	getTickersListByMarketExchange(market: MarketEnum, exchange: ExchangeEnum): ITicker[] {
+		return this._tickersList.filter((q) => market === q.market && exchange === q.exchange);
 	}
 
 	/*

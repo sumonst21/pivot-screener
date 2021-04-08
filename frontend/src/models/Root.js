@@ -2,7 +2,6 @@ import { types } from 'mobx-state-tree';
 import { createContext, useContext } from 'react';
 import { persist } from 'mst-persist';
 import { io } from 'socket.io-client';
-import jsonpack from 'jsonpack';
 import Ticker from './Ticker';
 import { calcPercent, isDev } from '../lib/Helpers';
 import ChartOptions from './ChartOptions';
@@ -35,13 +34,11 @@ const RootModel = types
 
 			socket.on('connect', () => {
 				self.setSocketConnected(true);
-				console.log('socket connected');
 				if (currentQuery != null) socket.emit('request_tickers', JSON.stringify(currentQuery)); // request_tickers with the pending currentQuery
 			});
 
-			socket.on('disconnect', (reason) => {
+			socket.on('disconnect', () => {
 				self.setSocketConnected(false);
-				console.log(`disconnect reason: ${reason}`);
 			});
 
 			socket.on('connect_error', (err) => {
@@ -49,7 +46,7 @@ const RootModel = types
 			});
 
 			socket.on('tickers_data', (data) => {
-				self.setTickers(jsonpack.unpack(data));
+				self.setTickers(data);
 			});
 		}
 
@@ -71,12 +68,11 @@ const RootModel = types
 
 		const stopReceivingData = () => {
 			currentQuery = null;
-			self.tickers.clear();
 			socket.close();
 		};
 
 		function setTickers(data) {
-			self.tickers = data;
+			self.tickers = data.map((q) => ({ ...q, symbol: q.symbol.replace('_', '') }));
 		}
 
 		function setSocketConnected(b) {

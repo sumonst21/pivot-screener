@@ -24,7 +24,7 @@ app.use(helmet());
 app.use(compression());
 app.use(
 	cors({
-		origin: ['https://pivotscreener.com', 'https://pivotscreener.netlify.app', 'http://localhost:3000'],
+		origin: ['https://camcprback.netlify.app', 'https://camcprback.netlify.app', 'http://localhost:3000'],
 	})
 );
 

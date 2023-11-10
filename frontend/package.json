@@ -7,7 +7,7 @@
 		"ag-grid-community": "^25.1.0",
 		"ag-grid-react": "^25.1.0",
 		"antd": "^4.14.1",
-		"axios": "^0.21.1",
+		"axios": "^1.6.0",
 		"lightweight-charts": "^3.3.0",
 		"mobx": "^6.1.8",
 		"mobx-react-lite": "^3.2.0",
